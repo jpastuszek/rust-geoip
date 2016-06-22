@@ -12,6 +12,7 @@ name = "geoip"
 path = "src/geoip/lib.rs"
 
 [dependencies]
-geoip-sys = "^0.0.10"
+#geoip-sys = "^0.0.10"
+geoip-sys = { path = "/Users/wcc/Documents/rust-geoip/geoip-sys" }
 rustc-serialize = "^0.3.16"
 libc = "^0.2.6"

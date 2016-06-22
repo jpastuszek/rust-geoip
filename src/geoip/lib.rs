@@ -201,6 +201,26 @@ impl GeoIp {
         }
     }
 
+    pub fn region_name_by_code(country_code: &str, region_code: &str) -> &'static str {
+        unsafe {
+            ffi::CStr::from_ptr(
+                geoip_sys::GeoIP_region_name_by_code(
+                    ffi::CString::new(country_code).unwrap().as_ptr(),
+                    ffi::CString::new(region_code).unwrap().as_ptr()))
+                .to_str().expect("invalid string for region name")
+        }
+    }
+
+    pub fn time_zone_by_country_and_region(country_code: &str, region_code: &str) -> &'static str {
+        unsafe {
+            ffi::CStr::from_ptr(
+                geoip_sys::GeoIP_time_zone_by_country_and_region(
+                    ffi::CString::new(country_code).unwrap().as_ptr(),
+                    ffi::CString::new(region_code).unwrap().as_ptr()))
+                .to_str().expect("invalid string for region name")
+        }
+    }
+
     pub fn as_info_by_ip(&self, ip: IpAddr) -> Option<ASInfo> {
         let mut gl = geoip_sys::GeoIpLookup::new();
         let cres = match CNetworkIp::new(ip) {
