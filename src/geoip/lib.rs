@@ -201,23 +201,27 @@ impl GeoIp {
         }
     }
 
-    pub fn region_name_by_code(country_code: &str, region_code: &str) -> &'static str {
+    pub fn region_name_by_code(country_code: &str, region_code: &str) -> Option<&'static str> {
         unsafe {
-            ffi::CStr::from_ptr(
-                geoip_sys::GeoIP_region_name_by_code(
-                    ffi::CString::new(country_code).unwrap().as_ptr(),
-                    ffi::CString::new(region_code).unwrap().as_ptr()))
-                .to_str().expect("invalid string for region name")
+            let cstr = geoip_sys::GeoIP_region_name_by_code(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr());
+
+            if cstr.is_null() { return None; }
+
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
         }
     }
 
-    pub fn time_zone_by_country_and_region(country_code: &str, region_code: &str) -> &'static str {
+    pub fn time_zone_by_country_and_region(country_code: &str, region_code: &str) -> Option<&'static str> {
         unsafe {
-            ffi::CStr::from_ptr(
-                geoip_sys::GeoIP_time_zone_by_country_and_region(
-                    ffi::CString::new(country_code).unwrap().as_ptr(),
-                    ffi::CString::new(region_code).unwrap().as_ptr()))
-                .to_str().expect("invalid string for region name")
+            let cstr = geoip_sys::GeoIP_time_zone_by_country_and_region(
+                ffi::CString::new(country_code).unwrap().as_ptr(),
+                ffi::CString::new(region_code).unwrap().as_ptr());
+
+            if cstr.is_null() { return None; }
+
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
         }
     }
 
@@ -288,4 +292,16 @@ fn geoip_test_city() {
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
+}
+
+#[test]
+fn geoip_region_name_by_code() {
+    assert_eq!(GeoIp::region_name_by_code("foo", "bar"), None);
+    assert_eq!(GeoIp::region_name_by_code("US", "CA"), Some("California"));
+}
+
+#[test]
+fn geoip_time_zone_by_country_and_region() {
+    assert_eq!(GeoIp::time_zone_by_country_and_region("foo", "bar"), None);
+    assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"), Some("America/Los_Angeles"));
 }
