@@ -192,6 +192,7 @@ impl GeoIp {
 
     pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, String> {
         let db = unsafe {
+            // GeoIP_open_type initialises global state causing races
             let _lock = LOCK.lock().unwrap();
             geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int)
         };
@@ -294,10 +295,7 @@ impl Drop for GeoIp {
 
 #[test]
 fn geoip_test_basic() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip
-    };
+    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoIPASNum.dat"), Options::MemoryCache).unwrap();
     let ip = IpAddr::V4("91.203.184.192".parse().unwrap());
     let res = geoip.as_info_by_ip(ip).unwrap();
     assert!(res.asn == 41064);
@@ -344,13 +342,17 @@ fn geoip_test_city_type_race() {
     (0..N).map(|_| {
         let c = barrier.clone();
         thread::spawn(move|| {
+            // hopefully this will exercise a race condition
             c.wait();
-            GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+            let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+            let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
+            let res = geoip.city_info_by_ip(ip).unwrap();
+            assert_eq!(res.city.as_ref().map(String::as_str), Some("Mountain View"));
         })
     })
     .collect::<Vec<_>>()                // spawn all treads
     .into_iter().map(|t| t.join())      // wait for treads to finish and get their results
     .collect::<Result<Vec<_>, _>>()     // will be Err(Any) if one of the Result was Err
     .map_err(|any| any.downcast_ref::<String>().unwrap().to_owned())
-    .expect("one of the calls failed");
+    .expect("one of the threads failed");
 }
