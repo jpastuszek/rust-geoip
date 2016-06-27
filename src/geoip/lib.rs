@@ -8,12 +8,19 @@
 extern crate libc;
 extern crate rustc_serialize;
 extern crate geoip_sys;
+#[macro_use]
+extern crate lazy_static;
 
 use libc::{c_char, c_int, c_ulong};
 use std::ffi;
 use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::Path;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref LOCK: Mutex<()> = Mutex::new(());
+}
 
 pub enum IpAddr {
     V4(Ipv4Addr),
@@ -185,6 +192,7 @@ impl GeoIp {
 
     pub fn open_type(db_type: DBType, options: Options) -> Result<GeoIp, String> {
         let db = unsafe {
+            let _lock = LOCK.lock().unwrap();
             geoip_sys::GeoIP_open_type(db_type.clone() as c_int, options as c_int)
         };
         if db.is_null() {
