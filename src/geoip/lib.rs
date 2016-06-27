@@ -1,4 +1,3 @@
-
 #![crate_name = "geoip"]
 #![crate_type = "rlib"]
 
@@ -300,10 +299,7 @@ fn geoip_test_basic() {
 
 #[test]
 fn geoip_test_city() {
-    let geoip = match GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"), Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip
-    };
+    let geoip = GeoIp::open(&Path::new("/opt/geoip/GeoLiteCity.dat"), Options::MemoryCache).unwrap();
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
@@ -311,10 +307,7 @@ fn geoip_test_city() {
 
 #[test]
 fn geoip_test_city_type() {
-    let geoip = match GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache) {
-        Err(err) => panic!(err),
-        Ok(geoip) => geoip
-    };
+    let geoip = GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
     let ip = IpAddr::V4("8.8.8.8".parse().unwrap());
     let res = geoip.city_info_by_ip(ip).unwrap();
     assert!(res.city.unwrap() == "Mountain View");
@@ -330,4 +323,26 @@ fn geoip_region_name_by_code() {
 fn geoip_time_zone_by_country_and_region() {
     assert_eq!(GeoIp::time_zone_by_country_and_region("foo", "bar"), None);
     assert_eq!(GeoIp::time_zone_by_country_and_region("US", "CA"), Some("America/Los_Angeles"));
+}
+
+#[test]
+fn geoip_test_city_type_race() {
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+    const N: usize = 20;
+
+    let barrier = Arc::new(Barrier::new(N));
+
+    (0..N).map(|_| {
+        let c = barrier.clone();
+        thread::spawn(move|| {
+            c.wait();
+            GeoIp::open_type(DBType::CityEditionRev1, Options::MemoryCache).unwrap();
+        })
+    })
+    .collect::<Vec<_>>()                // spawn all treads
+    .into_iter().map(|t| t.join())      // wait for treads to finish and get their results
+    .collect::<Result<Vec<_>, _>>()     // will be Err(Any) if one of the Result was Err
+    .map_err(|any| any.downcast_ref::<String>().unwrap().to_owned())
+    .expect("one of the calls failed");
 }
