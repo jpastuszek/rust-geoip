@@ -12,7 +12,6 @@ name = "geoip"
 path = "src/geoip/lib.rs"
 
 [dependencies]
-#geoip-sys = { path = "/Users/wcc/Documents/rust-geoip/geoip-sys" }
 geoip-sys = { git = "https://github.com/jpastuszek/rust-geoip.git" }
 rustc-serialize = "^0.3.16"
 libc = "^0.2.6"

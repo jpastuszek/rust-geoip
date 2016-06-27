@@ -236,7 +236,7 @@ impl GeoIp {
 
             if cstr.is_null() { return None; }
 
-            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid region name data"))
+            Some(ffi::CStr::from_ptr(cstr).to_str().expect("invalid time zone data"))
         }
     }
 
