@@ -21,6 +21,7 @@ lazy_static! {
     static ref LOCK: Mutex<()> = Mutex::new(());
 }
 
+#[derive(Debug, Clone)]
 pub enum IpAddr {
     V4(Ipv4Addr),
     V6(Ipv6Addr)
@@ -31,6 +32,7 @@ enum Charset {
     Utf8 = 1
 }
 
+#[derive(Debug, Clone)]
 pub enum Options {
     Standard = 0,
     MemoryCache = 1,
