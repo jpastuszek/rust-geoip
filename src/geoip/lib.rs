@@ -27,7 +27,8 @@ pub enum IpAddr {
 }
 
 enum Charset {
-    UTF8 = 1
+    //Iso88591 = 0,
+    Utf8 = 1
 }
 
 pub enum Options {
@@ -99,7 +100,6 @@ pub struct CityInfo {
     pub longitude: f32,
     pub dma_code: Option<u32>,
     pub area_code: Option<u32>,
-    pub charset: u32,
     pub continent_code: Option<String>,
     pub netmask: u32
 }
@@ -134,7 +134,6 @@ impl CityInfo {
             longitude: res.longitude,
             dma_code: maybe_code(res.dma_code as u32),
             area_code: maybe_code(res.area_code as u32),
-            charset: res.charset as u32,
             continent_code: maybe_string(res.continent_code),
             netmask: res.netmask as u32
         }
@@ -184,7 +183,7 @@ impl GeoIp {
         if db.is_null() {
             return Err(format!("Can't open {}", file));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int)
         } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
@@ -200,7 +199,7 @@ impl GeoIp {
         if db.is_null() {
             return Err(format!("Can't open DB of type {:?}", db_type));
         }
-        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::UTF8 as c_int)
+        if unsafe { geoip_sys::GeoIP_set_charset(db, Charset::Utf8 as c_int)
         } != 0 {
             return Err("Can't set charset to UTF8".to_string());
         }
